@@ -1,0 +1,65 @@
+from flask import Flask, jsonify, request
+import requests
+
+app = Flask(__name__)
+
+API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY'  # Replace with your OpenWeatherMap API key
+
+@app.route('/weather', methods=['GET'])
+def get_weather():
+    city = request.args.get('city')
+    if not city:
+        return jsonify({'error': 'City is required!'}), 400
+    
+    url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric'
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        return jsonify({
+            'temperature': data['main']['temp'],
+            'description': data['weather'][0]['description'],
+            'city': data['name']
+        })
+    else:
+        return jsonify({'error': 'City not found!'}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+#Set Up the Frontend with HTML and JavaScript
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+</head>
+<body>
+    <h1>Weather App</h1>
+    <input type="text" id="city" placeholder="Enter city name">
+    <button onclick="getWeather()">Get Weather</button>
+    <div id="result"></div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('city').value;
+            const response = await fetch(`/weather?city=${city}`);
+            const data = await response.json();
+            
+            const resultDiv = document.getElementById('result');
+            if (response.ok) {
+                resultDiv.innerHTML = `
+                    <h2>Weather in ${data.city}</h2>
+                    <p>Temperature: ${data.temperature}øC</p>
+                    <p>Description: ${data.description}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = `<p>${data.error}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+
